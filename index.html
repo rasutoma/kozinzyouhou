@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>個人情報流出シミュレーション（デモ）</title>
+<style>
+  body{font-family:system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif; background:#0b0f1a; color:#e6eef8; padding:20px}
+  .card{background:#0f1724;border-radius:12px;padding:18px;margin:12px 0;box-shadow:0 6px 18px rgba(0,0,0,.6)}
+  .red{color:#ff7b7b}
+  button{padding:10px 14px;border-radius:8px;border:0;background:#1f6feb;color:white;cursor:pointer}
+  .leak{background:#2b0f0f;border-left:6px solid #ff4b4b;padding:12px;margin-top:12px}
+  .timeline{font-size:0.95rem;opacity:0.95}
+  .small{font-size:0.85rem;color:#a9b3c7}
+  .consent{background:#102027;padding:12px;border-radius:8px;margin-bottom:14px}
+  .danger{color:#ffbaba}
+</style>
+</head>
+<body>
+<h1>個人情報流出シミュレーション（デモ）</h1>
+
+<div class="card consent" id="consentBox">
+  <p>⚠️ これは<strong>シミュレーション</strong>です。実在の個人情報を入力しないでください。ブラウザ内で完結します。続行しますか？</p>
+  <button id="agreeBtn">続行する（シミュレーションを開始）</button>
+</div>
+
+<div id="app" style="display:none">
+  <div class="card">
+    <h2>ダミーアカウント生成</h2>
+    <p class="small">本デモは架空データのみ使用します。</p>
+    <label>名前: <input id="nameInp" placeholder="ランダム生成"/></label>
+    <button id="genBtn">ランダム生成</button>
+    <button id="startLeak" style="margin-left:8px">流出をシミュレーション</button>
+  </div>
+
+  <div id="profileCard" class="card" style="display:none">
+    <h3>プロフィール（ダミー）</h3>
+    <div id="profile"></div>
+    <div style="margin-top:10px" class="small">この情報がどのように悪用されるかを次で体験するよ。</div>
+  </div>
+
+  <div id="leakArea"></div>
+
+  <div id="advice" class="card" style="display:none">
+    <h3>被害と対処（教育）</h3>
+    <ul>
+      <li>メールアドレスが漏れた → パスワード再利用チェッカーを使って変更、2段階認証を有効化。</li>
+      <li>住所/電話が漏れた → フィッシング（なりすまし電話）に注意、重要通知は公式サイトで確認。</li>
+      <li>クレジット情報（架空）が漏れた → カード会社へ連絡・停止、購入履歴監視。</li>
+    </ul>
+    <p class="small">詳しい手順は現実の状況に応じて専門窓口へ。</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  const rand = (n)=> Math.floor(Math.random()*n);
+  const mockDomains = ["example.com","maildemo.xyz","playground.local"];
+  const surnames = ["佐藤","鈴木","高橋","田中","伊藤","渡辺","山本","中村"];
+  const names = ["太郎","花子","優斗","さくら","大輔","未来","翔","凛"];
+  const streets = ["青山1-2-3","渋谷4-5-6","中野7-8-9","池袋10-11-12"];
+  const products = ["スマホケース","サブスク（動画）","カフェ購入履歴","通販注文(#1234)"];
+
+  const agreeBtn = document.getElementById('agreeBtn');
+  const consentBox = document.getElementById('consentBox');
+  const app = document.getElementById('app');
+  const genBtn = document.getElementById('genBtn');
+  const nameInp = document.getElementById('nameInp');
+  const profileCard = document.getElementById('profileCard');
+  const profileDiv = document.getElementById('profile');
+  const startLeak = document.getElementById('startLeak');
+  const leakArea = document.getElementById('leakArea');
+  const advice = document.getElementById('advice');
+
+  let currentProfile = null;
+
+  function genProfile(seedName){
+    const family = surnames[rand(surnames.length)];
+    const given = names[rand(names.length)];
+    const email = (seedName?seedName.replace(/\s/g,'').toLowerCase():family+given).replace(/[^\w\-\.]/g,'') + "@" + mockDomains[rand(mockDomains.length)];
+    const phone = "090-" + (1000+rand(9000)) + "-" + (1000+rand(9000));
+    const addr = streets[rand(streets.length)] + " " + (rand(30)+1) + "号室";
+    const card = "**** **** **** " + (1000+rand(9000));
+    const history = [];
+    for(let i=0;i<3;i++) history.push(products[rand(products.length)]);
+    return {name: family + " " + given, email, phone, addr, card, history};
+  }
+
+  function renderProfile(p){
+    profileDiv.innerHTML = `
+      <div><strong>氏名</strong>： ${p.name}</div>
+      <div><strong>メール</strong>： ${p.email}</div>
+      <div><strong>電話</strong>： ${p.phone}</div>
+      <div><strong>住所</strong>： ${p.addr}</div>
+      <div><strong>クレジット</strong>： ${p.card}</div>
+      <div><strong>購入履歴</strong>： ${p.history.join(", ")}</div>
+    `;
+    profileCard.style.display = "block";
+  }
+
+  agreeBtn.addEventListener('click', ()=>{
+    consentBox.style.display='none';
+    app.style.display='block';
+    // auto generate
+    const p = genProfile();
+    currentProfile = p;
+    nameInp.value = p.name;
+    renderProfile(p);
+  });
+
+  genBtn.addEventListener('click', ()=>{
+    const p = genProfile(nameInp.value || null);
+    currentProfile = p;
+    nameInp.value = p.name;
+    renderProfile(p);
+  });
+
+  startLeak.addEventListener('click', ()=>{
+    if(!currentProfile) return;
+    leakArea.innerHTML = "";
+    advice.style.display='none';
+
+    // 演出：タイムライン→リーク詳細→被害シナリオ
+    const timeline = document.createElement('div');
+    timeline.className = 'card timeline';
+    timeline.innerHTML = `<h3>タイムライン</h3>
+      <ol>
+        <li>2025-10-01 03:14 — データベースに脆弱性を突かれ、<span class="red">メール・電話</span>が流出。</li>
+        <li>2025-10-02 09:40 — 不正アクセスで購入履歴が晒される。</li>
+        <li>2025-10-03 18:22 — フィッシングメールが大量送信され始める。</li>
+      </ol>`;
+    leakArea.appendChild(timeline);
+
+    // 演出：ダークウェブ風リーク表示（ただの架空表示）
+    const leakBox = document.createElement('div');
+    leakBox.className = 'leak';
+    leakBox.innerHTML = `<h3>公開された情報（ダミー表示）</h3>
+      <ul>
+        <li>メール： <strong>${currentProfile.email}</strong></li>
+        <li>電話： <strong>${currentProfile.phone}</strong></li>
+        <li>住所（詳細）： <strong>${currentProfile.addr}</strong></li>
+        <li>クレカ（マスク）： <strong>${currentProfile.card}</strong></li>
+      </ul>
+      <p class="small">※全て架空データ。実際に送受信や外部通信は行っていません。</p>
+    `;
+    leakArea.appendChild(leakBox);
+
+    // 被害シナリオ
+    const harm = document.createElement('div');
+    harm.className = 'card';
+    harm.innerHTML = `<h3 class="danger">シナリオ — どんな被害が起きるか</h3>
+      <ol>
+        <li>メールが知られた→同じパスワードを使っている他サービスへ不正ログイン試行。</li>
+        <li>電話が知られた→なりすましでカード会社を装うコールが来る（個人情報聞き出し）。</li>
+        <li>住所が晒される→荷物の転送詐欺や身元割り出しに利用される可能性。</li>
+      </ol>
+      <button id="simulatePhish">フィッシングメールを表示（架空）</button>
+    `;
+    leakArea.appendChild(harm);
+
+    const phishBtn = document.getElementById('simulatePhish');
+    phishBtn.addEventListener('click', ()=>{
+      const ph = document.createElement('div');
+      ph.className = 'card';
+      ph.innerHTML = `<h4>フィッシングメール（サンプル・架空）</h4>
+        <p>差出人: support@${mockDomains[rand(mockDomains.length)]}</p>
+        <p>件名: 【重要】アカウントの不審なログイン</p>
+        <p>本文: ${currentProfile.name} 様<br>
+        お客様のアカウントに不審なアクセスがありました。直ちに以下のリンクから認証を行ってください。<br>
+        <a href="#">https://secure-${mockDomains[rand(mockDomains.length)]}/verify</a></p>
+        <p class="small">--- これは学習用の架空の例です ---</p>`;
+      leakArea.appendChild(ph);
+      advice.style.display='block';
+      ph.scrollIntoView({behavior:'smooth'});
+    });
+
+  });
+
+})();
+</script>
+</body>
+</html>
