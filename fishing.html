@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>フィッシング訓練（安全なデモ）</title>
+<style>
+  :root{--bg:#0f1724;--card:#0b1220;--accent:#ff6b6b;--muted:#9aa7b2}
+  body{font-family: system-ui, "Hiragino Kaku Gothic ProN","メイリオ",sans-serif;background:var(--bg);color:#e6eef8;margin:0;padding:20px}
+  header{display:flex;align-items:center;gap:12px}
+  .badge{background:var(--accent);color:#210; padding:6px 10px;border-radius:8px;font-weight:700}
+  .card{background:var(--card);padding:18px;border-radius:12px;margin-top:14px;box-shadow:0 6px 18px rgba(0,0,0,.6)}
+  h1,h2{margin:0 0 8px 0}
+  .small{color:var(--muted);font-size:0.9rem}
+  form{display:flex;flex-direction:column;gap:8px}
+  input{padding:10px;border-radius:8px;border:1px solid #213040;background:#07101a;color:#e6eef8}
+  button{padding:10px;border-radius:8px;border:0;background:#1f6feb;color:white;cursor:pointer}
+  .notice{background:#2b0f0f;border-left:6px solid var(--accent);padding:10px;border-radius:6px}
+  .explain{margin-top:10px}
+  .hint{background:#071827;padding:10px;border-radius:8px;color:var(--muted);font-size:0.95rem}
+  .example-flag{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .flag{background:#071827;padding:8px;border-radius:8px;border:1px solid #122635;color:var(--muted)}
+  footer{margin-top:18px;color:var(--muted);font-size:0.9rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">TRAINING</div>
+  <div>
+    <h1>フィッシング訓練（安全デモ）</h1>
+    <div class="small">※これは訓練用の架空ページです。実データは送信されません。</div>
+  </div>
+</header>
+
+<div class="card">
+  <h2>デモページ（架空）</h2>
+  <div class="small">このページは「本物っぽく見せる」ことを体験するための教材です。学習目的以外での使用は禁止。</div>
+
+  <div class="notice" style="margin-top:12px">
+    <strong>重要：</strong>このフォームは**送信してもデータを外に出さない**安全設計です。送信後はブラウザ上で“訓練完了”のメッセージが表示されます。
+  </div>
+
+  <div style="margin-top:12px">
+    <form id="fakeForm" onsubmit="return false;">
+      <label><strong>メールアドレス</strong><br><input id="email" placeholder="you@example.com" /></label>
+      <label><strong>パスワード</strong><br><input id="password" type="password" placeholder="password" /></label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button id="submitBtn" type="button">送信（訓練）</button>
+        <button id="revealBtn" type="button">なぜ怪しいか見る</button>
+      </div>
+    </form>
+
+    <div id="result" class="card" style="display:none"></div>
+  </div>
+
+  <div class="explain">
+    <h3>怪しいポイント（チェックリスト）</h3>
+    <div class="hint">
+      <div class="example-flag">
+        <div class="flag">差出人アドレスが微妙に違う</div>
+        <div class="flag">リンクに公式ドメインがない</div>
+        <div class="flag">緊急性を煽る文言（今すぐ確認）</div>
+        <div class="flag">署名が不十分・会社情報が無い</div>
+        <div class="flag">メール内リンクが短縮URLや怪しいサブドメイン</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:12px">対処の手順</h3>
+    <ol>
+      <li>送信元アドレスとリンク先のドメインを常に確認する。</li>
+      <li>疑わしい場合はメール内リンクをクリックせず、公式サイトへ自分でアクセスする。</li>
+      <li>同じパスワードを複数サービスで使っている場合は今すぐ変更する。</li>
+      <li>不安なら組織の情報セキュリティ担当やカード会社へ確認。</li>
+    </ol>
+  </div>
+
+</div>
+
+<div class="card" id="analysisCard" style="display:none">
+  <h2>診断結果（訓練用）</h2>
+  <div id="analysis" class="small"></div>
+</div>
+
+<footer>
+  <div>制作：教育用シミュレーション — 実データは収集しません。</div>
+  <div class="small" style="margin-top:6px">この教材を授業で使うなら、事前に受講者に「訓練であること」を伝えて下さい。</div>
+</footer>
+
+<script>
+(function(){
+  const submitBtn = document.getElementById('submitBtn');
+  const revealBtn = document.getElementById('revealBtn');
+  const result = document.getElementById('result');
+  const analysisCard = document.getElementById('analysisCard');
+  const analysisDiv = document.getElementById('analysis');
+
+  submitBtn.addEventListener('click', ()=>{
+    // 絶対に外部送信しない。ここはローカル処理のみ。
+    const email = document.getElementById('email').value || '(未入力)';
+    const pwd = document.getElementById('password').value ? '（入力あり）' : '（未入力）';
+    result.style.display = 'block';
+    result.innerHTML = `<strong>訓練送信完了</strong>
+      <p class="small">入力内容はこのブラウザ内でのみ処理され、外部には送られません。</p>
+      <p><strong>入力されたメール:</strong> ${escapeHtml(email)}</p>
+      <p><strong>パスワード:</strong> ${escapeHtml(pwd)}</p>
+      <p class="small">教材担当は受講者の入力を収集しないでください。</p>`;
+    result.scrollIntoView({behavior:'smooth'});
+  });
+
+  revealBtn.addEventListener('click', ()=>{
+    analysisCard.style.display = 'block';
+    // 教育用に「なぜ怪しいか」を自動診断（超簡易）
+    const email = (document.getElementById('email').value || '').toLowerCase();
+    const notes = [];
+    if(!email.includes('@') || email.includes('secure-') || email.includes('support')) notes.push('差出人アドレスに不自然な語が含まれている可能性があります。');
+    notes.push('リンク先が公式ドメインか必ず確認するよう伝えてください。');
+    notes.push('「今すぐ」や「確認しないと閉鎖」などの文言は警戒サインです。');
+
+    analysisDiv.innerHTML = notes.map(n=>`<div>・${n}</div>`).join('');
+    analysisCard.scrollIntoView({behavior:'smooth'});
+  });
+
+  function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+})();
+</script>
+</body>
+</html>
