@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>体験ページ：注意事項</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root{
+      --bg:#fffaf8;
+      --card:#fff6f6;
+      --accent:#d93025;
+      --accent-dark:#a2231a;
+      --muted:#555;
+    }
+    body{
+      margin:0;
+      font-family: "Segoe UI", YuGothic, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      background:linear-gradient(180deg, #fff 0%, var(--bg) 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      padding:20px;
+      color:var(--muted);
+    }
+    .card{
+      background:var(--card);
+      border:2px solid rgba(217,48,37,0.12);
+      box-shadow:0 8px 30px rgba(0,0,0,0.06);
+      border-radius:12px;
+      max-width:780px;
+      width:100%;
+      padding:28px;
+      text-align:left;
+    }
+    h1{
+      margin:0 0 10px;
+      color:var(--accent-dark);
+      font-size:1.4rem;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    p.lead{
+      margin:10px 0 18px;
+      line-height:1.6;
+      font-size:1rem;
+    }
+    ul.points{
+      margin:0 0 22px;
+      padding-left:1.1rem;
+      line-height:1.6;
+    }
+    .buttons{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:6px;
+    }
+    .btn{
+      padding:12px 18px;
+      border-radius:8px;
+      text-decoration:none;
+      font-weight:600;
+      cursor:pointer;
+      border:0;
+      color:#fff;
+      background:var(--accent);
+      transition:transform .12s ease,background .12s ease;
+    }
+    .btn:hover{ transform:translateY(-3px); background:var(--accent-dark); }
+    .btn.secondary{
+      background:#4a90e2;
+    }
+    .note{
+      margin-top:14px;
+      font-size:0.95rem;
+      color:#333;
+      background:rgba(0,0,0,0.02);
+      padding:10px 12px;
+      border-radius:8px;
+    }
+
+    /* モーダル */
+    .overlay{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,0.45);
+      z-index:1000;
+    }
+    .overlay.open{ display:flex; }
+    .modal{
+      background:#fff;
+      border-radius:10px;
+      max-width:520px;
+      width:92%;
+      padding:18px 20px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.25);
+      text-align:left;
+    }
+    .modal h2{ margin:0 0 8px; font-size:1.05rem; color:var(--accent-dark); }
+    .modal p{ margin:0 0 14px; line-height:1.5; color:#333; }
+    .modal .actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:8px; }
+    .modal .btn.cancel{ background:#e0e0e0; color:#222; }
+    @media (max-width:480px){
+      h1{ font-size:1.15rem; }
+      .btn{ width:100%; text-align:center; }
+      .buttons{ flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card" role="region" aria-labelledby="heading">
+    <h1 id="heading">⚠ 体験前の重要な注意（必ずお読みください）</h1>
+
+    <p class="lead">
+      このページは<strong>教育目的の体験サイト</strong>です。以下を必ず確認してください。
+    </p>
+
+    <ul class="points">
+      <li><strong>実際の個人情報の流出は発生しません。</strong>このサイト内の仕組みは体験用に設計されています。</li>
+      <li><strong>本番のパスワードやクレジットカード番号、実際のメールアドレス等は入力しないでください。</strong>必ずダミー情報をご利用ください。</li>
+      <li>フィッシング体験コンテンツは<span style="color:var(--accent-dark)">学習・防止訓練目的</span>です。不正利用を助長するためのものではありません。</li>
+    </ul>
+
+    <div class="buttons" aria-hidden="false">
+      <button class="btn" id="btn-leak" data-target="leak">情報流出デモを体験する</button>
+      <button class="btn secondary" id="btn-phish" data-target="phish">フィッシング詐欺体験を体験する（教育用）</button>
+    </div>
+
+    <div class="note" role="note">
+      デモ用URLはまだ設定されていない場合があります。ボタンを押すと確認画面が表示されます。続ける場合は「続行」を押してください。  
+      （実際の遷移先URLは <code>data-url</code> 属性に設定してください）
+    </div>
+  </div>
+
+  <!-- 確認モーダル -->
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 id="modal-title">体験ページに移動します</h2>
+      <p id="modal-desc">
+        これから体験ページに移動します。<br>
+        <strong>必ず実データではなくダミー情報を入力してください。</strong><br>
+        本コンテンツは教育目的のみです。違法行為や不正利用を目的としたアクセスは固くお断りします。
+      </p>
+      <div class="actions">
+        <button class="btn cancel" id="modal-cancel">キャンセル</button>
+        <button class="btn" id="modal-go">続行して移動する</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // デモ用リンク（実運用時はここを本番URLに差し替えてください）
+    // セキュリティ上の注意：必ず信頼できるURLにしてください。
+    const LINKS = {
+      leak: "https://example.com/demo-leak",    // 情報流出デモのURL
+      phish: "https://example.com/demo-phish"   // フィッシング体験のURL
+    };
+
+    // ボタン処理
+    const overlay = document.getElementById('overlay');
+    const modalCancel = document.getElementById('modal-cancel');
+    const modalGo = document.getElementById('modal-go');
+    let targetUrl = null;
+
+    function openModal(kind){
+      targetUrl = LINKS[kind] || null;
+      // モーダル内テキストを必要なら変更（ここでは共通メッセージ）
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      // focus management
+      modalGo.focus();
+    }
+
+    document.getElementById('btn-leak').addEventListener('click', ()=> openModal('leak'));
+    document.getElementById('btn-phish').addEventListener('click', ()=> openModal('phish'));
+
+    modalCancel.addEventListener('click', ()=>{
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      targetUrl = null;
+    });
+
+    modalGo.addEventListener('click', ()=>{
+      // 最終確認（targetUrl がない場合はリンク未設定の旨を表示）
+      if (!targetUrl){
+        alert("遷移先URLが設定されていません。管理者にお問い合わせください。");
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+        return;
+      }
+      // 新しいタブで開く
+      window.open(targetUrl, "_blank", "noopener");
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+    });
+
+    // エスケープで閉じる
+    window.addEventListener('keydown', (e)=>{
+      if (e.key === 'Escape' && overlay.classList.contains('open')){
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+      }
+    });
+  </script>
+
+</body>
+</html>
