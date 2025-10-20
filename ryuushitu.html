@@ -59,7 +59,42 @@
   const surnames = ["佐藤","鈴木","高橋","田中","伊藤","渡辺","山本","中村"];
   const names = ["太郎","花子","優斗","さくら","大輔","未来","翔","凛"];
   const streets = ["青山1-2-3","渋谷4-5-6","中野7-8-9","池袋10-11-12"];
-  const products = ["スマホケース","サブスク（動画）","カフェ購入履歴","通販注文(#1234)"];
+
+  const products = [
+    "スマホケース",
+    "サブスク（動画）",
+    "カフェ購入履歴",
+    "通販注文 (#1234)",
+    "電子書籍購入（技術書）",
+    "フードデリバリー（〇〇バーガー）",
+    "公共料金支払い（電気）",
+    "ネットスーパー（生鮮食品）",
+    "音楽配信サブスク（Premium）",
+    "交通系ICチャージ",
+    "旅行予約（国内ホテル）",
+    "アプリ内課金（ゲーム）",
+    "化粧品通販（定期便）",
+    "オンライン英会話 月額プラン",
+    "スマートウォッチ購入",
+    "ファッション通販（秋物コート）",
+    "中古マーケット購入（〇〇フリマ）",
+    "自動車保険ネット更新",
+    "オンライン医療相談",
+    "フィットネスジムの月会費"
+  ];
+
+  const causes = [
+    "古いWebサーバーのソフトウェアに既知の脆弱性があり、外部から侵入されデータが窃取された。",
+    "多要素認証が未設定の管理者アカウントが辞めた社員によって不正に利用された。",
+    "クラウドストレージ（例：S3バケット）が誤ってパブリック設定になっており、第三者がアクセス可能だった。",
+    "委託先ベンダーのセキュリティが不十分で、連携API経由で個人情報が抜き取られた。",
+    "メール誤送信（ToとBccの間違い）で顧客リストが外部に漏洩した。",
+    "ネットワークの監視が不十分で、マルウェアに感染した端末から情報が外部に送信されていた。",
+    "GitHubに公開されたコードにAPIキーや認証情報がハードコードされたまま残っていた。",
+    "社員が私物のUSBメモリにデータを保存し、紛失したことで情報が漏洩した。",
+    "社内向け開発環境がインターネットからアクセス可能な状態で放置されていた。",
+    "パスワードの使い回しにより、他社サービス経由で認証情報が流出し不正ログインが行われた。"
+  ];
 
   const agreeBtn = document.getElementById('agreeBtn');
   const consentBox = document.getElementById('consentBox');
@@ -98,10 +133,13 @@
     profileCard.style.display = "block";
   }
 
+  function shuffle(arr) {
+    return arr.map(v => ({v, sort: Math.random()})).sort((a,b)=>a.sort-b.sort).map(o=>o.v);
+  }
+
   agreeBtn.addEventListener('click', ()=>{
     consentBox.style.display='none';
     app.style.display='block';
-    // auto generate
     const p = genProfile();
     currentProfile = p;
     nameInp.value = p.name;
@@ -120,18 +158,16 @@
     leakArea.innerHTML = "";
     advice.style.display='none';
 
-    // 演出：タイムライン→リーク詳細→被害シナリオ
+    const selectedCauses = shuffle(causes).slice(0, 5);
+
     const timeline = document.createElement('div');
     timeline.className = 'card timeline';
-    timeline.innerHTML = `<h3>タイムライン</h3>
-      <ol>
-        <li>2025-10-01 03:14 — データベースに脆弱性を突かれ、<span class="red">メール・電話</span>が流出。</li>
-        <li>2025-10-02 09:40 — 不正アクセスで購入履歴が晒される。</li>
-        <li>2025-10-03 18:22 — フィッシングメールが大量送信され始める。</li>
-      </ol>`;
+    timeline.innerHTML = `<h3>タイムライン</h3><ol>` + selectedCauses.map((c, i) => {
+      const date = `2025-10-${String(1+i).padStart(2,'0')} ${rand(24)}:${String(rand(60)).padStart(2,'0')}`;
+      return `<li>${date} — ${c}</li>`;
+    }).join('') + `</ol>`;
     leakArea.appendChild(timeline);
 
-    // 演出：ダークウェブ風リーク表示（ただの架空表示）
     const leakBox = document.createElement('div');
     leakBox.className = 'leak';
     leakBox.innerHTML = `<h3>公開された情報（ダミー表示）</h3>
@@ -141,11 +177,9 @@
         <li>住所（詳細）： <strong>${currentProfile.addr}</strong></li>
         <li>クレカ（マスク）： <strong>${currentProfile.card}</strong></li>
       </ul>
-      <p class="small">※全て架空データ。実際に送受信や外部通信は行っていません。</p>
-    `;
+      <p class="small">※全て架空データ。実際に送受信や外部通信は行っていません。</p>`;
     leakArea.appendChild(leakBox);
 
-    // 被害シナリオ
     const harm = document.createElement('div');
     harm.className = 'card';
     harm.innerHTML = `<h3 class="danger">シナリオ — どんな被害が起きるか</h3>
@@ -154,12 +188,10 @@
         <li>電話が知られた→なりすましでカード会社を装うコールが来る（個人情報聞き出し）。</li>
         <li>住所が晒される→荷物の転送詐欺や身元割り出しに利用される可能性。</li>
       </ol>
-      <button id="simulatePhish">フィッシングメールを表示（架空）</button>
-    `;
+      <button id="simulatePhish">フィッシングメールを表示（架空）</button>`;
     leakArea.appendChild(harm);
 
-    const phishBtn = document.getElementById('simulatePhish');
-    phishBtn.addEventListener('click', ()=>{
+    document.getElementById('simulatePhish').addEventListener('click', ()=>{
       const ph = document.createElement('div');
       ph.className = 'card';
       ph.innerHTML = `<h4>フィッシングメール（サンプル・架空）</h4>
@@ -167,13 +199,12 @@
         <p>件名: 【重要】アカウントの不審なログイン</p>
         <p>本文: ${currentProfile.name} 様<br>
         お客様のアカウントに不審なアクセスがありました。直ちに以下のリンクから認証を行ってください。<br>
-        <a href="#">https://secure-example.com/verify</a></p>
+        <a href="#">https://rasutoma.github.io/kozinzyouhou/fishing.html</a></p>
         <p class="small">--- これは学習用の架空の例です ---</p>`;
       leakArea.appendChild(ph);
       advice.style.display='block';
       ph.scrollIntoView({behavior:'smooth'});
     });
-
   });
 
 })();
