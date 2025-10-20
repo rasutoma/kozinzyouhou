@@ -132,11 +132,6 @@
       <button class="btn secondary" id="btn-phish" data-target="phish">フィッシング詐欺体験を体験する（教育用）</button>
     </div>
 
-    <div class="note" role="note">
-      デモ用URLはまだ設定されていない場合があります。ボタンを押すと確認画面が表示されます。続ける場合は「続行」を押してください。  
-      （実際の遷移先URLは <code>data-url</code> 属性に設定してください）
-    </div>
-  </div>
 
   <!-- 確認モーダル -->
   <div class="overlay" id="overlay" aria-hidden="true">
@@ -158,8 +153,8 @@
     // デモ用リンク（実運用時はここを本番URLに差し替えてください）
     // セキュリティ上の注意：必ず信頼できるURLにしてください。
     const LINKS = {
-      leak: "https://example.com/demo-leak",    // 情報流出デモのURL
-      phish: "https://example.com/demo-phish"   // フィッシング体験のURL
+      leak: "https://rasutoma.github.io/kozinzyouhou/ryuushitu.html",    // 情報流出デモのURL
+      phish: "https://rasutoma.github.io/kozinzyouhou/fishing.html"   // フィッシング体験のURL
     };
 
     // ボタン処理
